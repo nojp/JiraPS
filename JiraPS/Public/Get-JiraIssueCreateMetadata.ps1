@@ -29,7 +29,7 @@ function Get-JiraIssueCreateMetadata {
         Write-DebugMessage "[$($MyInvocation.MyCommand.Name)] PSBoundParameters: $($PSBoundParameters | Out-String)"
 
         $projectObj = Get-JiraProject -Project $Project -Credential $Credential -ErrorAction Stop
-        $issueTypeObj = Get-JiraIssueType -IssueType $IssueType -Credential $Credential -ErrorAction Stop
+        $issueTypeObj = Get-JiraIssueType -IssueType $IssueType -ProjectID $($projectObj.Id) -Credential $Credential -ErrorAction Stop
 
         $parameter = @{
             URI        = $resourceURi -f $projectObj.Id, $issueTypeObj.Id

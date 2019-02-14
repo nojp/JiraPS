@@ -9,7 +9,11 @@
         [Parameter()]
         [System.Management.Automation.PSCredential]
         [System.Management.Automation.Credential()]
-        $Credential = [System.Management.Automation.PSCredential]::Empty
+        $Credential = [System.Management.Automation.PSCredential]::Empty,
+
+        [Parameter()]
+        [String]
+        $ProjectID = $null
     )
 
     begin {
@@ -34,14 +38,21 @@
                 Write-Debug "[$($MyInvocation.MyCommand.Name)] Invoking JiraMethod with `$parameter"
                 $result = Invoke-JiraMethod @parameter
 
-                Write-Output (ConvertTo-JiraIssueType -InputObject $result)
+                if ($ProjectID -eq $null){
+                    Write-Output (ConvertTo-JiraIssueType -InputObject $($result | ?{$_.scope -eq $null}))
+                }
+                else {
+                    $projectSpecificItemTypes = $result | ?{$_.scope -ne $null} | ?{$_.scope.project.id -eq $ProjectID}
+                    $filteredResult = $projectSpecificItemTypes + $($result | ?{($projectSpecificItemTypes.Name -notcontains $_.Name) -and $_.scope -eq $null})
+                    Write-Output (ConvertTo-JiraIssueType -InputObject $filteredResult)
+                }
             }
             '_Search' {
                 foreach ($_issueType in $IssueType) {
                     Write-Verbose "[$($MyInvocation.MyCommand.Name)] Processing [$_issueType]"
                     Write-Debug "[$($MyInvocation.MyCommand.Name)] Processing `$_issueType [$_issueType]"
 
-                    $allIssueTypes = Get-JiraIssueType -Credential $Credential
+                    $allIssueTypes = Get-JiraIssueType -Credential $Credential -ProjectID $ProjectID
 
                     Write-Output ($allIssueTypes | Where-Object -FilterScript {$_.Id -eq $_issueType})
                     Write-Output ($allIssueTypes | Where-Object -FilterScript {$_.Name -like $_issueType})
